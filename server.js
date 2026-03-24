@@ -12,9 +12,26 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
+// Environment Validation
+if (!process.env.HF_TOKEN && !process.env.HF_API_KEY) {
+  console.warn('WARNING: HF_TOKEN or HF_API_KEY is missing. AI chat will fail.');
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    env: {
+      port: port,
+      hasHfToken: !!(process.env.HF_TOKEN || process.env.HF_API_KEY)
+    }
+  });
+});
 
 // OpenAI / Hugging Face Router Setup
 const client = new OpenAI({
