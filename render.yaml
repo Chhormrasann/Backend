@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 18.x
+      - key: HF_TOKEN
+        sync: false # Set this in the Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false # Set this in the Render dashboard
