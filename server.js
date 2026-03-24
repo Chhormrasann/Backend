@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-dotenv.config({ path: path.join(process.cwd(), '../.env') });
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
