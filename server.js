@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3001;
 
 // Environment Validation
 if (!process.env.HF_TOKEN && !process.env.HF_API_KEY) {
@@ -60,6 +60,7 @@ Rules for Explanation (The "30-Second Drill"):
 - After the code block, provide exactly 3-sentence architectural breakdown.
 - Explain WHY you chose specific layout techniques (e.g., Flexbox vs. Grid) and CSS properties.
 - This breakdown is for a student audience to learn better engineering.
+IMPORTANT: For complex requests like POS systems or dashboards, PROVIDE THE COMPLETE CODE. DO NOT TRUNCATE.
 
 User request: ${userInput}
 `
@@ -137,6 +138,28 @@ Always provide complete, production-quality code.
 
 User request: ${userInput}
 `
+  }),
+
+  debug: (userInput) => ({
+    role: "system",
+    content: `
+You are a Debugging Expert at ChatBot ANB.
+Analyze the provided code and find efficient solutions for errors.
+Identify the bug and suggest a fix.
+
+User request: ${userInput}
+`
+  }),
+
+  explain: (userInput) => ({
+    role: "system",
+    content: `
+You are a Software Engineering Educator at ChatBot ANB.
+Explain concepts clearly and use metaphors where helpful.
+Simplify complex patterns for learners.
+
+User request: ${userInput}
+`
   })
 };
 
@@ -201,16 +224,15 @@ app.post('/api/chat', async (req, res) => {
     const lastUserMessage = messages[messages.length - 1].content;
     const promptType = detectPromptType(lastUserMessage);
 
-    const systemPrompt =
-      promptType === "ui"
-        ? promptLibrary.ui(lastUserMessage)
-        : promptType === "refinement"
-        ? promptLibrary.refinement(lastUserMessage)
-        : promptType === "code"
-        ? promptLibrary.code(lastUserMessage)
-        : promptType === "sql"
-        ? promptLibrary.sql(lastUserMessage)
-        : promptLibrary.senior(lastUserMessage);
+    const { type: frontendType } = req.body;
+    let selectedType = frontendType || promptType;
+    
+    // Ensure we have a valid mapping
+    if (!promptLibrary[selectedType]) {
+      selectedType = 'senior'; // Default
+    }
+
+    const systemPrompt = promptLibrary[selectedType](lastUserMessage);
 
     const requestedModel = "Qwen/Qwen2.5-Coder-32B-Instruct"; // High quality coding model
 
@@ -218,16 +240,23 @@ app.post('/api/chat', async (req, res) => {
       model: requestedModel,
       messages: [systemPrompt, ...messages],
       stream: true,
-    });
+      max_tokens: 8192,
+      temperature: 0.7,
+    }, { timeout: 120000 }); // Increase timeout to 120 seconds
 
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || "";
-      if (content) {
-        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+    try {
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
       }
+      res.write('data: [DONE]\n\n');
+    } catch (streamError) {
+      console.error('Stream processing error:', streamError);
+      res.write(`data: ${JSON.stringify({ error: 'Stream cut off', details: streamError.message })}\n\n`);
     }
 
-    res.write('data: [DONE]\n\n');
     res.end();
   } catch (error) {
     console.error('Full Error from AI Router:', error);
