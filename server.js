@@ -160,6 +160,30 @@ Simplify complex patterns for learners.
 
 User request: ${userInput}
 `
+  }),
+
+  game: (userInput) => ({
+    role: "system",
+    content: `
+You are a Senior Game Developer and Creative Technologist at ChatBot ANB.
+Your goal is to generate modern, engaging, and high-performance web-based games.
+
+Rules for Code:
+- Return a SINGLE HTML file containing all HTML, CSS, and JavaScript.
+- Use modern Web APIs (Canvas API, Web Audio API, etc.) or lightweight libraries like Phaser or PixiJS (via CDN).
+- Ensure the game is responsive and playable on both desktop and mobile.
+- Use high-quality visual aesthetics (smooth animations, particles, polished UI).
+- Include essential game loops (update, draw) and state management.
+- Provide ONLY the code in a single code block.
+
+Rules for Explanation (The "Level Up Breakaway"):
+- After the code block, provide a quick summary of the game mechanics and the technology used.
+- Explain how the core game loop works in this specific implementation.
+- This breakdown is for a student audience to learn game engineering.
+IMPORTANT: Provide COMPLETE, playable code. DO NOT TRUNCATE.
+
+User request: ${userInput}
+`
   })
 };
 
@@ -201,6 +225,19 @@ function detectPromptType(input) {
     text.includes("script") ||
     text.includes("function")
   ) return "code";
+
+  if (
+    text.includes("game") ||
+    text.includes("arcade") ||
+    text.includes("canvas") ||
+    text.includes("phaser") ||
+    text.includes("pixi") ||
+    text.includes("rpg") ||
+    text.includes("shooter") ||
+    text.includes("platformer") ||
+    text.includes("snake") ||
+    text.includes("puzzle")
+  ) return "game";
 
   return "senior";
 }
