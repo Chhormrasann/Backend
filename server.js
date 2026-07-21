@@ -13,8 +13,8 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Environment Validation
-if (!process.env.HF_TOKEN && !process.env.HF_API_KEY) {
-  console.warn('WARNING: HF_TOKEN or HF_API_KEY is missing. AI chat will fail.');
+if (!process.env.OPENAI_API_KEY) {
+  console.warn("WARNING: OPENAI_API_KEY is missing. AI chat will fail.");
 }
 
 // Middleware
@@ -23,20 +23,19 @@ app.use(express.json());
 
 // Health Check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     env: {
       port: port,
-      hasHfToken: !!(process.env.HF_TOKEN || process.env.HF_API_KEY)
+      hasOpenAIKey: !!process.env.OPENAI_API_KEY
     }
   });
 });
 
 // OpenAI / Hugging Face Router Setup
 const client = new OpenAI({
-  baseURL: "https://router.huggingface.co/v1",
-  apiKey: process.env.HF_TOKEN || process.env.HF_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 //////////////////////////////////////////////////////////////////
@@ -46,7 +45,7 @@ const promptLibrary = {
   ui: (userInput) => ({
     role: "system",
     content: `
-You are a Senior UI Architect and Frontend Expert at ChatBot ANB.
+You are a Senior UI Architect and Frontend Expert at CodeLume.
 Your goal is to generate production-ready, accessible, and high-performance UI components using modern best practices.
 
 Rules for Code:
@@ -97,7 +96,7 @@ User request: ${userInput}
   refinement: (userInput) => ({
     role: "system",
     content: `
-You are a Senior UI Architect at ChatBot ANB.
+You are a Senior UI Architect at CodeLume.
 The user wants to refine an existing piece of code.
 
 Rules:
@@ -113,7 +112,7 @@ User request: ${userInput}
   senior: (userInput) => ({
     role: "system",
     content: `
-You are a senior AI coding assistant at ChatBot ANB.
+You are a senior AI coding assistant at CodeLume.
 Target User:
 - Software Developers: Professionals looking for a quick AI assistant to assist with code refactoring or debugging.
 - Computer Science Students: Learners seeking clear explanations for programming concepts and coding patterns.
@@ -132,7 +131,7 @@ User request: ${userInput}
   general: (userInput) => ({
     role: "system",
     content: `
-You are a Senior AI Coding Assistant at ChatBot ANB.
+You are a Senior AI Coding Assistant at CodeLume.
 Explain clearly and simply for developers, students, and hobbyists.
 Always provide complete, production-quality code.
 
@@ -143,7 +142,7 @@ User request: ${userInput}
   debug: (userInput) => ({
     role: "system",
     content: `
-You are a Debugging Expert at ChatBot ANB.
+You are a Debugging Expert at CodeLume.
 Analyze the provided code and find efficient solutions for errors.
 Identify the bug and suggest a fix.
 
@@ -154,7 +153,7 @@ User request: ${userInput}
   explain: (userInput) => ({
     role: "system",
     content: `
-You are a Software Engineering Educator at ChatBot ANB.
+You are a Software Engineering Educator at CodeLume.
 Explain concepts clearly and use metaphors where helpful.
 Simplify complex patterns for learners.
 
@@ -165,7 +164,7 @@ User request: ${userInput}
   game: (userInput) => ({
     role: "system",
     content: `
-You are a Senior Game Developer and Creative Technologist at ChatBot ANB.
+You are a Senior Game Developer and Creative Technologist at CodeLume.
 Your goal is to generate modern, engaging, and high-performance web-based games.
 
 Rules for Code:
@@ -263,7 +262,7 @@ app.post('/api/chat', async (req, res) => {
 
     const { type: frontendType } = req.body;
     let selectedType = frontendType || promptType;
-    
+
     // Ensure we have a valid mapping
     if (!promptLibrary[selectedType]) {
       selectedType = 'senior'; // Default
@@ -271,7 +270,7 @@ app.post('/api/chat', async (req, res) => {
 
     const systemPrompt = promptLibrary[selectedType](lastUserMessage);
 
-    const requestedModel = "Qwen/Qwen2.5-Coder-32B-Instruct"; // High quality coding model
+    const requestedModel = "gpt-5"; // High quality coding model
 
     const stream = await client.chat.completions.create({
       model: requestedModel,
