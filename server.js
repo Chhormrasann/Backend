@@ -13,8 +13,8 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Environment Validation
-if (!process.env.OPENAI_API_KEY) {
-  console.warn("WARNING: OPENAI_API_KEY is missing. AI chat will fail.");
+if (!process.env.GEMINI_API_KEY) {
+  console.warn("WARNING: GEMINI_API_KEY is missing. AI chat will fail.");
 }
 
 // Middleware
@@ -28,14 +28,15 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     env: {
       port: port,
-      hasOpenAIKey: !!process.env.OPENAI_API_KEY
+      hasGeminiKey: !!process.env.GEMINI_API_KEY
     }
   });
 });
 
-// OpenAI / Hugging Face Router Setup
+// Gemini API through its OpenAI-compatible endpoint
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.GEMINI_API_KEY,
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
 });
 
 //////////////////////////////////////////////////////////////////
@@ -270,7 +271,7 @@ app.post('/api/chat', async (req, res) => {
 
     const systemPrompt = promptLibrary[selectedType](lastUserMessage);
 
-    const requestedModel = "gpt-5"; // High quality coding model
+    const requestedModel = "gemini-3.5-flash";
 
     const stream = await client.chat.completions.create({
       model: requestedModel,
